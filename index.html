@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BCS & Govt Job AI Exam Agent</title>
+    <!-- Tailwind CSS for Styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans min-h-screen">
+
+    <!-- Header / Navbar -->
+    <header class="bg-indigo-700 text-white p-4 shadow-md sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <i class="fa-solid fa-graduation-cap text-3xl"></i>
+                <div>
+                    <h1 class="font-bold text-xl leading-tight">BCS Prelim Prep AI</h1>
+                    <p class="text-xs text-indigo-200">Smart Study & Exam Simulator Agent</p>
+                </div>
+            </div>
+            <div id="timer-badge" class="hidden bg-indigo-900 px-3 py-1.5 rounded-lg text-amber-300 font-mono font-bold flex items-center space-x-2">
+                <i class="fa-regular fa-clock"></i>
+                <span id="timer-display">90:00</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto p-4 md:p-6">
+
+        <!-- STEP 1: INPUT & SETUP DASHBOARD -->
+        <section id="dashboard-section" class="bg-white rounded-2xl shadow-xl p-6 border border-slate-100 max-w-3xl mx-auto">
+            <div class="text-center mb-6">
+                <div class="inline-block p-3 bg-indigo-50 text-indigo-600 rounded-full mb-3">
+                    <i class="fa-solid fa-robot text-3xl"></i>
+                </div>
+                <h2 class="text-2xl font-bold text-slate-800">AI Exam Generator Dashboard</h2>
+                <p class="text-slate-500 text-sm mt-1">আপনার টপিক, নোটস বা স্টাডি মেটেরিয়াল থেকে সরাসরি MCQ বানিয়ে এক্সাম দিন</p>
+            </div>
+
+            <!-- Input Tabs -->
+            <div class="flex border-b border-slate-200 mb-4">
+                <button onclick="switchTab('topic')" id="tab-topic" class="py-2 px-4 text-sm font-semibold border-b-2 border-indigo-600 text-indigo-600">
+                    <i class="fa-solid fa-pen-nib mr-1"></i> Topic / Text
+                </button>
+                <button onclick="switchTab('link')" id="tab-link" class="py-2 px-4 text-sm font-semibold border-b-2 border-transparent text-slate-500 hover:text-indigo-600">
+                    <i class="fa-solid fa-link mr-1"></i> Web / Video Link
+                </button>
+            </div>
+
+            <!-- Tab Contents -->
+            <div id="content-topic" class="space-y-3">
+                <label class="block text-sm font-medium text-slate-700">স্টাডি টপিক বা নোটস টাইপ করুন:</label>
+                <textarea id="input-text" rows="4" class="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="E.g., 'বাংলা: সমাস ও সন্ধি, English: Tense & Parts of Speech, সাধারণ বিজ্ঞান: আলোর প্রতিফলন'"></textarea>
+            </div>
+
+            <div id="content-link" class="space-y-3 hidden">
+                <label class="block text-sm font-medium text-slate-700">ইউটিউব ভিডিও বা আর্টিকেলের ইউআরএল (Link) দিন:</label>
+                <input type="url" id="input-url" class="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="https://youtube.com/watch?v=... or article link">
+            </div>
+
+            <!-- Generate Buttons -->
+            <div class="mt-6 flex flex-col sm:flex-row gap-3">
+                <button onclick="generateExam()" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-xl shadow-lg transition flex items-center justify-center space-x-2">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                    <span>Generate Exam Now</span>
+                </button>
+                <button onclick="loadDefaultMock()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-3 px-6 rounded-xl transition">
+                    Load Default Mock Test
+                </button>
+            </div>
+        </section>
+
+        <!-- STEP 2: LIVE EXAM VIEW -->
+        <section id="exam-section" class="hidden grid grid-cols-1 md:grid-cols-4 gap-6">
+            
+            <!-- Left Sidebar Navigation -->
+            <aside class="md:col-span-1 bg-white p-4 rounded-xl shadow border border-slate-100 h-fit">
+                <h3 class="font-bold text-slate-700 border-b pb-2 mb-3 flex justify-between items-center">
+                    <span><i class="fa-solid fa-list-check text-indigo-600 mr-2"></i>Subjects</span>
+                    <span id="question-counter" class="text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full font-bold">0/0</span>
+                </h3>
+                <ul id="subject-list" class="space-y-2 text-sm text-slate-600">
+                    <li class="p-2 bg-indigo-50 text-indigo-700 font-semibold rounded-lg flex justify-between">
+                        <span>বাংলা ব্যাকরণ</span>
+                        <span id="sec-count">0/5</span>
+                    </li>
+                </ul>
+
+                <hr class="my-4">
+
+                <div class="space-y-2">
+                    <button onclick="downloadPDF()" class="w-full bg-slate-800 hover:bg-black text-white text-xs py-2 px-3 rounded-lg font-semibold flex items-center justify-center space-x-2">
+                        <i class="fa-solid fa-file-pdf text-red-400"></i>
+                        <span>PDF ডাউনলোড</span>
+                    </button>
+                    <button onclick="submitExam()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white text-sm py-2.5 px-3 rounded-lg font-bold shadow flex items-center justify-center space-x-2">
+                        <i class="fa-solid fa-paper-plane"></i>
+                        <span>Submit Exam</span>
+                    </button>
+                </div>
+            </aside>
+
+            <!-- Main Question Container -->
+            <div class="md:col-span-3 space-y-6" id="questions-container">
+                <!-- MCQ Cards will render dynamically here -->
+            </div>
+        </section>
+
+        <!-- STEP 3: RESULT & ANALYTICS VIEW -->
+        <section id="result-section" class="hidden bg-white rounded-2xl shadow-xl p-6 md:p-8 border border-slate-100 max-w-3xl mx-auto text-center space-y-6">
+            <div class="inline-block p-4 bg-amber-100 text-amber-600 rounded-full text-4xl">
+                🏆
+            </div>
+            <div>
+                <h2 class="text-3xl font-extrabold text-slate-800">Exam Completed!</h2>
+                <p class="text-slate-500 text-sm mt-1">Here is a detailed breakdown of your performance.</p>
+            </div>
+
+            <!-- Score Stats Grid -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-left">
+                <div class="bg-indigo-50 p-4 rounded-xl border border-indigo-100">
+                    <p class="text-xs text-indigo-600 font-bold uppercase">Total Score</p>
+                    <h3 id="res-score" class="text-3xl font-black text-indigo-700 mt-1">0.00</h3>
+                    <p class="text-xs text-slate-400">Including (-0.5) Penalty</p>
+                </div>
+                <div class="bg-emerald-50 p-4 rounded-xl border border-emerald-100">
+                    <p class="text-xs text-emerald-600 font-bold uppercase">Accuracy</p>
+                    <h3 id="res-accuracy" class="text-3xl font-black text-emerald-700 mt-1">0%</h3>
+                </div>
+                <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                    <div class="text-xs text-slate-600 space-y-1">
+                        <p class="flex justify-between"><span>✅ Correct:</span> <strong id="res-correct" class="text-emerald-600">0</strong></p>
+                        <p class="flex justify-between"><span>❌ Wrong:</span> <strong id="res-wrong" class="text-red-600">0</strong></p>
+                        <p class="flex justify-between"><span>⚠️ Penalty:</span> <strong id="res-penalty" class="text-amber-600">0.00</strong></p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pt-4 flex justify-center space-x-4">
+                <button onclick="restartApp()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-8 rounded-xl shadow transition">
+                    Try Another Test
+                </button>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Application Javascript Logic -->
+    <script>
+        // CONFIGURATION: Google Gemini API Key
+        const GEMINI_API_KEY = "AQ.Ab8RN6Ky18Z2ks7CdDwYPgViU_OXHecOATLUQsHuU5aHYZNxLg"; 
+
+        let currentQuestions = [];
+        let userAnswers = {};
+        let timerInterval = null;
+
+        function switchTab(tab) {
+            document.getElementById('content-topic').classList.toggle('hidden', tab !== 'topic');
+            document.getElementById('content-link').classList.toggle('hidden', tab !== 'link');
+            document.getElementById('tab-topic').className = tab === 'topic' ? "py-2 px-4 text-sm font-semibold border-b-2 border-indigo-600 text-indigo-600" : "py-2 px-4 text-sm font-semibold border-b-2 border-transparent text-slate-500 hover:text-indigo-600";
+            document.getElementById('tab-link').className = tab === 'link' ? "py-2 px-4 text-sm font-semibold border-b-2 border-indigo-600 text-indigo-600" : "py-2 px-4 text-sm font-semibold border-b-2 border-transparent text-slate-500 hover:text-indigo-600";
+        }
+
+        async function generateExam() {
+            const promptText = document.getElementById('input-text').value || "বিসিএস প্রিলিমিনারি সাধারণ জ্ঞান ও বাংলা সাহিত্য";
+            
+            // UI Loading state
+            alert("AI আপনার এক্সাম প্রিপেয়ার করছে, অনুগ্রহ করে কয়েক সেকেন্ড অপেক্ষা করুন...");
+
+            try {
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{
+                            parts: [{
+                                text: `Create 5 BCS Standard Preliminary Multiple-Choice Questions in Bengali based on this topic: ${promptText}. Return STRICT JSON format only: 
+                                [{"id": 1, "subject": "বাংলা", "question": "প্রশ্ন?", "options": ["ক) অপশন১", "খ) অপশন২", "গ) অপশন৩", "ঘ) অপশন৪"], "correctIndex": 0, "explanation": "বিস্তারিত ব্যাখ্যা"}]`
+                            }]
+                        }]
+                    })
+                });
+
+                const data = await response.json();
+                const jsonText = data.candidates[0].content.parts[0].text.replace(/```json/g, '').replace(/```/g, '').trim();
+                currentQuestions = JSON.parse(jsonText);
+                startExam();
+            } catch (err) {
+                console.error(err);
+                alert("AI রেসপন্স পেতে সমস্যা হয়েছে! Default Mock Test লোড করা হচ্ছে...");
+                loadDefaultMock();
+            }
+        }
+
+        function loadDefaultMock() {
+            currentQuestions = [
+                {
+                    id: 1,
+                    subject: "বাংলা ব্যাকরণ",
+                    question: "শব্দের মধ্যে দুইটি ব্যঞ্জনের পারস্পরিক স্থান পরিবর্তনকে ব্যাকরণের ভাষায় কী বলা হয়?",
+                    options: ["ক) অভিশ্রুতি", "খ) ধ্বনিবিপর্যয়", "গ) অপিনিহিতি", "ঘ) বিষমীভবন"],
+                    correctIndex: 1,
+                    explanation: "দুটো ব্যঞ্জনবর্ণের পরস্পর স্থান পরিবর্তন করাকে ধ্বনিবিপর্যয় বলে। যেমন: পিশাচ > পিশাচ, লাফ > ফল।"
+                },
+                {
+                    id: 2,
+                    subject: "বাংলা ব্যাকরণ",
+                    question: "নিচের কোনটি সমাসবদ্ধ পদ 'অলুক দ্বন্দ্ব' সমাসের উৎকৃষ্ট উদাহরণ?",
+                    options: ["ক) মা-বাবা", "খ) দেশে-বিদেশে", "গ) হাট-বাজার", "ঘ) আয়-ব্যয়"],
+                    correctIndex: 1,
+                    explanation: "যে দ্বন্দ্ব সমাসে সমস্যমান পদের বিভক্তি লোপ পায় না, তাকে অলুক দ্বন্দ্ব সমাস বলে। যেমন: দেশে-বিদেশে, দুধে-ভাতে।"
+                }
+            ];
+            startExam();
+        }
+
+        function startExam() {
+            userAnswers = {};
+            document.getElementById('dashboard-section').classList.add('hidden');
+            document.getElementById('exam-section').classList.remove('hidden');
+            document.getElementById('timer-badge').classList.remove('hidden');
+
+            renderQuestions();
+            startTimer(90 * 60); // 90 Minutes
+        }
+
+        function renderQuestions() {
+            const container = document.getElementById('questions-container');
+            document.getElementById('question-counter').innerText = `0/${currentQuestions.length}`;
+            container.innerHTML = '';
+
+            currentQuestions.forEach((q, qIndex) => {
+                const card = document.createElement('div');
+                card.className = "bg-white p-6 rounded-xl shadow-sm border border-slate-200 space-y-4";
+                
+                card.innerHTML = `
+                    <div class="flex items-center space-x-2 text-xs font-bold text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-md w-fit">
+                        <span>${q.subject}</span>
+                    </div>
+                    <h4 class="font-bold text-slate-800 text-lg">${qIndex + 1}. ${q.question}</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        ${q.options.map((opt, oIndex) => `
+                            <button onclick="selectOption(${qIndex}, ${oIndex})" id="btn-${qIndex}-${oIndex}" class="p-3 text-left border rounded-xl font-medium text-slate-700 hover:bg-indigo-50 hover:border-indigo-300 transition">
+                                ${opt}
+                            </button>
+                        `).join('')}
+                    </div>
+                    <div id="exp-${qIndex}" class="hidden mt-3 p-3 bg-amber-50 border border-amber-200 text-amber-800 text-sm rounded-lg">
+                        <strong>ব্যাখ্যা:</strong> ${q.explanation}
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function selectOption(qIdx, optIdx) {
+            userAnswers[qIdx] = optIdx;
+            
+            // Highlight selected
+            currentQuestions[qIdx].options.forEach((_, oIdx) => {
+                const btn = document.getElementById(`btn-${qIdx}-${oIdx}`);
+                btn.className = oIdx === optIdx 
+                    ? "p-3 text-left border rounded-xl font-medium text-white bg-indigo-600 border-indigo-600"
+                    : "p-3 text-left border rounded-xl font-medium text-slate-700 hover:bg-indigo-50 hover:border-indigo-300";
+            });
+
+            document.getElementById('question-counter').innerText = `${Object.keys(userAnswers).length}/${currentQuestions.length}`;
+        }
+
+        function submitExam() {
+            clearInterval(timerInterval);
+            let correctCount = 0;
+            let wrongCount = 0;
+
+            currentQuestions.forEach((q, index) => {
+                const userChoice = userAnswers[index];
+                if (userChoice !== undefined) {
+                    if (userChoice === q.correctIndex) {
+                        correctCount++;
+                    } else {
+                        wrongCount++;
+                    }
+                }
+                // Show explanations after submission
+                const expDiv = document.getElementById(`exp-${index}`);
+                if(expDiv) expDiv.classList.remove('hidden');
+            });
+
+            const penalty = wrongCount * 0.5;
+            const totalScore = (correctCount * 1.0) - penalty;
+            const accuracy = currentQuestions.length > 0 ? Math.round((correctCount / currentQuestions.length) * 100) : 0;
+
+            document.getElementById('res-score').innerText = totalScore.toFixed(2);
+            document.getElementById('res-accuracy').innerText = `${accuracy}%`;
+            document.getElementById('res-correct').innerText = correctCount;
+            document.getElementById('res-wrong').innerText = wrongCount;
+            document.getElementById('res-penalty').innerText = penalty.toFixed(2);
+
+            document.getElementById('exam-section').classList.add('hidden');
+            document.getElementById('timer-badge').classList.add('hidden');
+            document.getElementById('result-section').classList.remove('hidden');
+        }
+
+        function startTimer(duration) {
+            let timer = duration;
+            const display = document.getElementById('timer-display');
+            timerInterval = setInterval(() => {
+                const minutes = parseInt(timer / 60, 10);
+                const seconds = parseInt(timer % 60, 10);
+
+                display.textContent = (minutes < 10 ? "0" + minutes : minutes) + ":" + (seconds < 10 ? "0" + seconds : seconds);
+
+                if (--timer < 0) {
+                    clearInterval(timerInterval);
+                    alert("সময় শেষ!");
+                    submitExam();
+                }
+            }, 1000);
+        }
+
+        function downloadPDF() {
+            window.print();
+        }
+
+        function restartApp() {
+            document.getElementById('result-section').classList.add('hidden');
+            document.getElementById('dashboard-section').classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>
